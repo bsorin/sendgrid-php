@@ -32,6 +32,13 @@ class SendGrid {
     $this->options  = $options;
   }
 
+  /**
+   * Makes a post request to SendGrid to send an email
+   *
+   * @param SendGrid\Email $email Email object built
+   *
+   * @throws SendGrid\Exception if the response code is not 200
+   */
   public function send(SendGrid\Email $email) {
     $form             = $email->toWebFormat();
     $form['api_user'] = $this->api_user; 
@@ -43,6 +50,10 @@ class SendGrid {
     }
 
     $response = \Unirest::post($this->url, array('User-Agent' => 'sendgrid/' . $this->version . ';php'), $form);
+
+    if ($response->code != 200) {
+      throw new SendGrid\Exception($response->raw_body);
+    }
 
     return $response->body;
   }
