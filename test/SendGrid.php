@@ -28,64 +28,41 @@ class SendGridTest_SendGrid extends PHPUnit_Framework_TestCase {
     $this->assertEquals("http://sendgrid.org:80/send", $sendgrid->url);
   }
 
-  public function testSendResponse() {
-    $sendgrid = new SendGrid("foo", "bar");
-
-    $email = new SendGrid\Email();
-    $email->setFrom('bar@foo.com')->
-            setSubject('foobar subject')->
-            setText('foobar text')->
-            addTo('foo@bar.com');
-
-    $response = $sendgrid->send($email);
-
-    $this->assertEquals("Bad username / password", $response->errors[0]);
+  public function testSwitchOffSSLVerification() {
+    $sendgrid = new SendGrid("foo", "bar", array("turn_off_ssl_verification" => true));
+    $this->assertTrue(isset($sendgrid->getOptions()["turn_off_ssl_verification"]));
   }
 
-  public function testSendResponseWithAttachment() {
-    $sendgrid = new SendGrid("foo", "bar");
+  /**
+   * @expectedException SendGrid\Exception
+   */
+  public function testSendGridExceptionThrownWhenNot200() {
+    $mockResponse = (object)array("code" => 400, "raw_body" => '{"message": "error", "errors": ["Bad username / password"]}');
+
+    $sendgrid = m::mock("SendGrid[makeRequest]", array("foo", "bar"));
+    $sendgrid->shouldReceive('makeRequest')->once()->andReturn($mockResponse);
 
     $email = new SendGrid\Email();
-    $email->setFrom('p1@mailinator.com')->
-            setSubject('foobar subject')->
-            setText('foobar text')->
-            addTo('p1@mailinator.com')->
-            addAttachment('./gif.gif');
+    $email->setFrom("bar@foo.com")->
+            setSubject("foobar subject")->
+            setText("foobar text")->
+            addTo("foo@bar.com");
 
     $response = $sendgrid->send($email);
-
-    $this->assertEquals("Bad username / password", $response->errors[0]);
   }
 
-  public function testSendResponseWithAttachmentMissingExtension() {
-    $sendgrid = new SendGrid("foo", "bar");
+  public function testSendGridExceptionNotThrownWhen200() {
+    $mockResponse = (object)array("code" => 200, "body" => (object)array("message" => "success"));
+
+    $sendgrid = m::mock("SendGrid[makeRequest]", array("foo", "bar"));
+    $sendgrid->shouldReceive('makeRequest')->once()->andReturn($mockResponse);
 
     $email = new SendGrid\Email();
-    $email->setFrom('p1@mailinator.com')->
-            setSubject('foobar subject')->
-            setText('foobar text')->
-            addTo('p1@mailinator.com')->
-            addAttachment('./text');
+    $email->setFrom("bar@foo.com")->
+            setSubject("foobar subject")->
+            setText("foobar text")->
+            addTo("foo@bar.com");
 
     $response = $sendgrid->send($email);
-
-    $this->assertEquals("Bad username / password", $response->errors[0]);
   }
-
-  public function testSendResponseWithSslOptionFalse() {
-    $sendgrid = new SendGrid("foo", "bar", array("switch_off_ssl_verification" => true));
-
-    $email = new SendGrid\Email();
-    $email->setFrom('p1@mailinator.com')->
-            setSubject('foobar subject')->
-            setText('foobar text')->
-            addTo('p1@mailinator.com')->
-            addAttachment('./text');
-
-    $response = $sendgrid->send($email);
-
-    $this->assertEquals("Bad username / password", $response->errors[0]);
-
-  }
-
 }

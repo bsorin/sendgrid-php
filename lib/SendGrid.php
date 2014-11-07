@@ -12,7 +12,11 @@ class SendGrid {
             $url,
             $version = self::VERSION;
 
-  
+  /**
+   * @param string $api_user SendGrid username
+   * @param string $api_key SendGrid password
+   * @param array $options Config for the client
+   */
   public function __construct($api_user, $api_key, $options=array()) {
     $this->api_user = $api_user;
     $this->api_key = $api_key;
@@ -20,7 +24,6 @@ class SendGrid {
     if( !isset($options["turn_off_ssl_verification"]) ){
       $options["turn_off_ssl_verification"] = false;
     }
-    
 
     $protocol = isset($options['protocol']) ? $options['protocol'] : 'https';
     $host = isset($options['host']) ? $options['host'] : 'api.sendgrid.com';
@@ -32,12 +35,19 @@ class SendGrid {
     $this->options  = $options;
   }
 
+  // Should this just be public?
+  /**
+   * @return array The protected options array
+   */
+  public function getOptions() {
+    return $this->options;
+  }
+
   /**
    * Makes a post request to SendGrid to send an email
-   *
    * @param SendGrid\Email $email Email object built
-   *
    * @throws SendGrid\Exception if the response code is not 200
+   * @return stdClass Parsed json of response
    */
   public function send(SendGrid\Email $email) {
     $form             = $email->toWebFormat();
@@ -49,7 +59,7 @@ class SendGrid {
       \Unirest::verifyPeer(false);
     }
 
-    $response = \Unirest::post($this->url, array('User-Agent' => 'sendgrid/' . $this->version . ';php'), $form);
+    $response = $this->makeRequest($form);
 
     if ($response->code != 200) {
       throw new SendGrid\Exception($response->raw_body);
@@ -58,6 +68,15 @@ class SendGrid {
     return $response->body;
   }
 
+  /**
+   * Makes the actual HTTP request to SendGrid
+   * @param $form Array web ready version of SendGrid\Email
+   * @return Unirest\HttpResponse
+   */
+  public function makeRequest($form) {
+    return \Unirest::post($this->url, array('User-Agent' => 'sendgrid/' . $this->version . ';php'), $form);
+  }
+  
   public static function register_autoloader() {
     spl_autoload_register(array('SendGrid', 'autoloader'));
   }
