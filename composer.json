@@ -11,6 +11,7 @@
     "sendgrid/smtpapi": "0.0.1"
   },
   "require-dev": {
+    "mockery/mockery": "dev-master",
     "phpunit/phpunit": "3.7.*",
     "vlucas/phpdotenv": "1.0.2"
   },

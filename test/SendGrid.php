@@ -1,6 +1,12 @@
 <?php
 
+use \Mockery as m;
+
 class SendGridTest_SendGrid extends PHPUnit_Framework_TestCase {
+
+  public function tearDown() {
+    m::close();
+  }
 
   public function testVersion() {
     $this->assertEquals(SendGrid::VERSION, "2.1.1");
